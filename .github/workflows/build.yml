@@ -11,20 +11,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install JDK 8
+      - name: Install JDK 8 and set JAVA_HOME
         run: |
           sudo apt-get update
           sudo apt-get install -y openjdk-8-jdk
-          java -version
+          JAVA8_HOME=$(dirname $(dirname $(readlink -f /usr/lib/jvm/java-8-openjdk-*/bin/java | head -n 1)))
+          echo "JAVA_HOME=$JAVA8_HOME" >> $GITHUB_ENV
+          echo "$JAVA8_HOME/bin" >> $GITHUB_PATH
+          $JAVA8_HOME/bin/java -version
 
-      - name: Install Gradle 7.4.2
+      - name: Install Gradle 7.6.4
         run: |
-          curl -fsSL https://services.gradle.org/distributions/gradle-7.4.2-bin.zip -o gradle.zip
+          curl -fsSL https://services.gradle.org/distributions/gradle-7.6.4-bin.zip -o gradle.zip
           unzip -q gradle.zip -d /tmp/gradle
-          chmod +x /tmp/gradle/gradle-7.4.2/bin/gradle
+          chmod +x /tmp/gradle/gradle-7.6.4/bin/gradle
 
-      - name: Build with Gradle 7.4.2
-        run: /tmp/gradle/gradle-7.4.2/bin/gradle build
+      - name: Build with Gradle 7.6.4
+        run: /tmp/gradle/gradle-7.6.4/bin/gradle build --no-daemon
 
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
