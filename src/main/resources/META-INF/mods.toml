@@ -1,0 +1,11 @@
+modLoader="javafml"
+loaderVersion="[36,)"
+license="All Rights Reserved"
+
+[[mods]]
+modId="vetementsnext"
+version="1.0.0"
+displayName="Vetements Next"
+description='''
+Vetements Next mod for Minecraft 1.16.5
+'''
