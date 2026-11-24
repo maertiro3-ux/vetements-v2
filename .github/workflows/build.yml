@@ -20,6 +20,9 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      - name: Use Gradle 7.4.2 wrapper
+        run: ./gradlew wrapper --gradle-version 7.4.2 --distribution-type bin
+
       - name: Build with Gradle
         run: ./gradlew build
 
