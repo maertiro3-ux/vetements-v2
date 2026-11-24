@@ -20,6 +20,25 @@ jobs:
           echo "$JAVA8_HOME/bin" >> $GITHUB_PATH
           $JAVA8_HOME/bin/java -version
 
+      - name: Fix Gradle config for Forge 1.16.5
+        run: |
+          cat << 'EOF' > settings.gradle
+          pluginManagement {
+              repositories {
+                  gradlePluginPortal()
+                  maven {
+                      name = 'Forge'
+                      url = 'https://maven.minecraftforge.net/'
+                  }
+              }
+          }
+          rootProject.name = 'vetements-next'
+          EOF
+
+          if [ -f build.gradle ]; then
+            sed -i "s/\[6\.0,6\.2)/5.1.+/g" build.gradle
+          fi
+
       - name: Install Gradle 7.6.4
         run: |
           curl -fsSL https://services.gradle.org/distributions/gradle-7.6.4-bin.zip -o gradle.zip
