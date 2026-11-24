@@ -17,14 +17,14 @@ jobs:
           java-version: '8'
           distribution: 'temurin'
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+      - name: Install Gradle 7.4.2
+        run: |
+          curl -fsSL https://services.gradle.org/distributions/gradle-7.4.2-bin.zip -o gradle.zip
+          unzip -q gradle.zip -d /tmp/gradle
+          chmod +x /tmp/gradle/gradle-7.4.2/bin/gradle
 
-      - name: Use Gradle 7.4.2 wrapper
-        run: ./gradlew wrapper --gradle-version 7.4.2 --distribution-type bin
-
-      - name: Build with Gradle
-        run: ./gradlew build
+      - name: Build with Gradle 7.4.2
+        run: /tmp/gradle/gradle-7.4.2/bin/gradle build
 
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
