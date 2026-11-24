@@ -1,0 +1,11 @@
+modLoader="javafml"
+loaderVersion="[36,)"
+license="All Rights Reserved"
+
+[[mods]]
+modId="vetementsnext"
+version="${file.jarVersion}"
+displayName="Vetements Next"
+description='''
+Новый мод для Minecraft 1.16.5 Forge: меню на правый Shift, раздельные префиксы и суффиксы для ! и обычного чата, стили шрифта с поддержкой русского языка, примеры, AuthMe, Fullbright и FreeLook.
+'''
