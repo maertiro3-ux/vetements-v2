@@ -1026,7 +1026,7 @@ public class ModCore {
             RenderSystem.enableBlend();
             RenderSystem.disableTexture();
             RenderSystem.defaultBlendFunc();
-            buf.begin(GLFW.GL_TRIANGLE_FAN, DefaultVertexFormats.POSITION_COLOR);
+            buf.begin(GL11.GL_TRIANGLE_FAN, DefaultVertexFormats.POSITION_COLOR);
             buf.vertex(mat, cx, cy, 0.0F).color(r, g, b, a).endVertex();
             for (int i = 0; i <= steps; i++) {
                 double ang = Math.toRadians(startDeg + (endDeg - startDeg) * (i / (double) steps));
@@ -1053,7 +1053,7 @@ public class ModCore {
             RenderSystem.disableTexture();
             RenderSystem.defaultBlendFunc();
             RenderSystem.lineWidth(1.0F);
-            buf.begin(GLFW.GL_LINE_STRIP, DefaultVertexFormats.POSITION_COLOR);
+            buf.begin(GL11.GL_LINE_STRIP, DefaultVertexFormats.POSITION_COLOR);
             for (int i = 0; i <= steps; i++) {
                 double ang = Math.toRadians(startDeg + (endDeg - startDeg) * (i / (double) steps));
                 float px = cx + (float) (Math.cos(ang) * radius);
