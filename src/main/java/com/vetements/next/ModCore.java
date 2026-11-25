@@ -761,7 +761,6 @@ public class ModCore {
                 new StringTextComponent("Поиск модулей..."));
             searchBox.setMaxLength(64);
             searchBox.setValue(prevQuery);
-            searchBox.setDrawsBackground(false);
             searchBox.setTextColor(COL_TEXT_MAIN);
             this.children.add(searchBox);
         }
