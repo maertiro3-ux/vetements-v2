@@ -583,23 +583,27 @@ public class ModCore {
     }
 
     public static class VetementsBloodMenu extends Screen {
-        private static final int COL_BACKDROP = 0xB8050203;
-        private static final int COL_PANEL_LEFT = 0xEE0B0507;
-        private static final int COL_PANEL_RIGHT = 0xE210070A;
-        private static final int COL_BORDER_DARK = 0xFF3A0A12;
-        private static final int COL_BORDER_BLOOD = 0xFFB81D32;
-        private static final int COL_BORDER_BRIGHT = 0xFFE62E46;
-        private static final int COL_TAB_ACTIVE = 0xFF2B080E;
-        private static final int COL_CARD = 0xD814080C;
-        private static final int COL_CARD_HOVER = 0xF01E0B12;
-        private static final int COL_SEARCH_BG = 0xFF14070B;
-        private static final int COL_TEXT_MAIN = 0xFFF5ECEE;
-        private static final int COL_TEXT_MUTED = 0xFF9E848A;
-        private static final int COL_BLOOD_TEXT = 0xFFFF2A44;
-        private static final int COL_TOGGLE_OFF_BG = 0xFF28191D;
-        private static final int COL_TOGGLE_OFF_KNOB = 0xFF8C777C;
-        private static final int COL_TOGGLE_ON_BG = 0xFF7D0E1E;
-        private static final int COL_TOGGLE_ON_KNOB = 0xFFFF334E;
+        // Сетка в стиле Esmire: ровный тёмный графит/чёрный + аккуратные кроваво-красные акценты без лишних рамок
+        private static final int COL_BACKDROP = 0xA8060304;
+        private static final int COL_PANEL_LEFT = 0xF20D080A;
+        private static final int COL_PANEL_RIGHT = 0xEC120B0E;
+        private static final int COL_DIVIDER = 0xFF281217;
+        private static final int COL_BORDER_MAIN = 0xFF7A1422;
+        private static final int COL_TAB_ACTIVE = 0xFF260B10;
+        private static final int COL_TAB_ACCENT = 0xFFE0243C;
+        private static final int COL_CARD = 0xE6180F13;
+        private static final int COL_CARD_HOVER = 0xF5211319;
+        private static final int COL_SEARCH_BG = 0xFF170C10;
+        private static final int COL_SEARCH_FOCUS = 0xFFB81D32;
+        private static final int COL_BTN_BG = 0xFF2B1117;
+        private static final int COL_BTN_HOVER = 0xFF421620;
+        private static final int COL_TEXT_MAIN = 0xFFF3ECEE;
+        private static final int COL_TEXT_MUTED = 0xFF968287;
+        private static final int COL_BLOOD_TEXT = 0xFFFF2B47;
+        private static final int COL_TOGGLE_OFF_BG = 0xFF2A1D21;
+        private static final int COL_TOGGLE_OFF_KNOB = 0xFF8C7A7F;
+        private static final int COL_TOGGLE_ON_BG = 0xFF6E111E;
+        private static final int COL_TOGGLE_ON_KNOB = 0xFFFF2E4A;
 
         private Category selectedCategory = Category.VISUAL;
         private TextFieldWidget searchBox;
@@ -610,6 +614,7 @@ public class ModCore {
         private int winW;
         private int winH;
         private int sideW;
+        private int scrollOffset = 0;
 
         public VetementsBloodMenu() {
             super(new StringTextComponent("VETEMENTS"));
@@ -622,7 +627,7 @@ public class ModCore {
             allCards.add(new ModuleCard() {
                 public Category category() { return Category.VISUAL; }
                 public String title() { return "Fullbright"; }
-                public String description() { return "Максимальная яркость мира (бинд B)"; }
+                public String description() { return "Яркость мира (бинд B)"; }
                 public String keywords() { return "fullbright gamma яркость свет"; }
                 public boolean isSwitch() { return true; }
                 public boolean switchState() { return ModCore.isFullbrightEnabled(); }
@@ -633,7 +638,7 @@ public class ModCore {
             allCards.add(new ModuleCard() {
                 public Category category() { return Category.VISUAL; }
                 public String title() { return "FreeLook"; }
-                public String description() { return "Свободный обзор камеры на Left Alt"; }
+                public String description() { return "Обзор камеры на Left Alt"; }
                 public String keywords() { return "freelook камера обзор alt"; }
                 public boolean isSwitch() { return true; }
                 public boolean switchState() { return ModCore.isFreeLookEnabled(); }
@@ -644,7 +649,7 @@ public class ModCore {
             allCards.add(new ModuleCard() {
                 public Category category() { return Category.CHAT; }
                 public String title() { return "Чат-модуль"; }
-                public String description() { return "Форматирование исходящих сообщений"; }
+                public String description() { return "Форматирование сообщений"; }
                 public String keywords() { return "чат chat формат"; }
                 public boolean isSwitch() { return true; }
                 public boolean switchState() { return ModCore.isChatEnabled(); }
@@ -655,7 +660,7 @@ public class ModCore {
             allCards.add(new ModuleCard() {
                 public Category category() { return Category.CHAT; }
                 public String title() { return "Автопробел"; }
-                public String description() { return "Добавляет пробел в конце сообщения"; }
+                public String description() { return "Пробел в конце текста"; }
                 public String keywords() { return "автопробел пробел space"; }
                 public boolean isSwitch() { return true; }
                 public boolean switchState() { return ModCore.isAutoSpace(); }
@@ -666,7 +671,7 @@ public class ModCore {
             allCards.add(new ModuleCard() {
                 public Category category() { return Category.AUTO; }
                 public String title() { return "Авто-примеры"; }
-                public String description() { return "Автоматически решает примеры в чате"; }
+                public String description() { return "Решает примеры в чате"; }
                 public String keywords() { return "примеры математика math"; }
                 public boolean isSwitch() { return true; }
                 public boolean switchState() { return ModCore.isMathEnabled(); }
@@ -677,7 +682,7 @@ public class ModCore {
             allCards.add(new ModuleCard() {
                 public Category category() { return Category.AUTO; }
                 public String title() { return "Авто-вход AuthMe"; }
-                public String description() { return "Автоматический вход при запросе /login"; }
+                public String description() { return "Вход по запросу /login"; }
                 public String keywords() { return "authme вход login пароль"; }
                 public boolean isSwitch() { return true; }
                 public boolean switchState() { return ModCore.isAutoAuthEnabled(); }
@@ -688,7 +693,7 @@ public class ModCore {
             allCards.add(new ModuleCard() {
                 public Category category() { return Category.TEXT; }
                 public String title() { return "Префикс '!'"; }
-                public String description() { return "Текущий: " + emptyOrText(ModCore.getExclPrefix()); }
+                public String description() { return "Сейчас: " + emptyOrText(ModCore.getExclPrefix()); }
                 public String keywords() { return "префикс восклицательный prefix !"; }
                 public boolean isSwitch() { return false; }
                 public boolean switchState() { return false; }
@@ -699,7 +704,7 @@ public class ModCore {
             allCards.add(new ModuleCard() {
                 public Category category() { return Category.TEXT; }
                 public String title() { return "Суффикс '!'"; }
-                public String description() { return "Текущий: " + emptyOrText(ModCore.getExclSuffix()); }
+                public String description() { return "Сейчас: " + emptyOrText(ModCore.getExclSuffix()); }
                 public String keywords() { return "суффикс восклицательный suffix !"; }
                 public boolean isSwitch() { return false; }
                 public boolean switchState() { return false; }
@@ -710,7 +715,7 @@ public class ModCore {
             allCards.add(new ModuleCard() {
                 public Category category() { return Category.TEXT; }
                 public String title() { return "Префикс без '!'"; }
-                public String description() { return "Текущий: " + emptyOrText(ModCore.getPlainPrefix()); }
+                public String description() { return "Сейчас: " + emptyOrText(ModCore.getPlainPrefix()); }
                 public String keywords() { return "префикс обычный prefix"; }
                 public boolean isSwitch() { return false; }
                 public boolean switchState() { return false; }
@@ -721,7 +726,7 @@ public class ModCore {
             allCards.add(new ModuleCard() {
                 public Category category() { return Category.TEXT; }
                 public String title() { return "Суффикс без '!'"; }
-                public String description() { return "Текущий: " + emptyOrText(ModCore.getPlainSuffix()); }
+                public String description() { return "Сейчас: " + emptyOrText(ModCore.getPlainSuffix()); }
                 public String keywords() { return "суффикс обычный suffix"; }
                 public boolean isSwitch() { return false; }
                 public boolean switchState() { return false; }
@@ -732,13 +737,23 @@ public class ModCore {
             allCards.add(new ModuleCard() {
                 public Category category() { return Category.TEXT; }
                 public String title() { return "Стиль шрифта"; }
-                public String description() { return "Текущий: " + ModCore.getFontStyleName(); }
+                public String description() { return "Сейчас: " + ModCore.getFontStyleName(); }
                 public String keywords() { return "шрифт стиль font"; }
                 public boolean isSwitch() { return false; }
                 public boolean switchState() { return false; }
                 public String actionLabel() { return "Сменить"; }
                 public void onTrigger() { ModCore.cycleFontStyle(); }
             });
+        }
+
+        private static String emptyOrText(String value) {
+            return (value == null || value.isEmpty()) ? "нет" : value;
+        }
+
+        private void openChatPrompt(String prefix) {
+            if (this.minecraft != null) {
+                this.minecraft.setScreen(new ChatScreen(prefix));
+            }
         }
 
         @Override
@@ -750,17 +765,18 @@ public class ModCore {
 
             winX = (this.width - winW) / 2;
             winY = (this.height - winH) / 2;
-            sideW = Math.min(155, winW / 3);
+            sideW = Math.min(152, winW / 3);
 
-            int searchX = winX + sideW + 16;
-            int searchY = winY + 14;
-            int searchW = winW - sideW - 32;
+            int searchX = winX + sideW + 14;
+            int searchY = winY + 12;
+            int searchW = winW - sideW - 28;
 
             String prevQuery = searchBox != null ? searchBox.getValue() : "";
-            searchBox = new TextFieldWidget(this.font, searchX, searchY, searchW, 20,
+            searchBox = new TextFieldWidget(this.font, searchX + 6, searchY + 5, Math.max(40, searchW - 12), 14,
                 new StringTextComponent("Поиск модулей..."));
             searchBox.setMaxLength(64);
             searchBox.setValue(prevQuery);
+            searchBox.setBordered(false);
             searchBox.setTextColor(COL_TEXT_MAIN);
             this.children.add(searchBox);
         }
@@ -785,189 +801,157 @@ public class ModCore {
             return result;
         }
 
-        private void openChatPrompt(String prefixCommand) {
-            Minecraft mc = Minecraft.getInstance();
-            mc.setScreen(null);
-            if (mc.player != null) {
-                mc.player.sendMessage(
-                    new StringTextComponent("§4[VETEMENTS] §fВведи значение (или §7none§f чтобы убрать): §c" + prefixCommand),
-                    mc.player.getUUID()
-                );
-                mc.setScreen(new ChatScreen(prefixCommand));
-            }
+        private int[] getCardBounds(int index, int rightX, int listTop, int rightW) {
+            int cols = rightW >= 340 ? 2 : 1;
+            int gap = 10;
+            int cardW = (rightW - gap * (cols - 1)) / cols;
+            int cardH = 44;
+            int col = index % cols;
+            int row = index / cols;
+            int x1 = rightX + col * (cardW + gap);
+            int y1 = listTop + row * (cardH + 8) - scrollOffset;
+            return new int[]{x1, y1, x1 + cardW, y1 + cardH};
         }
 
-        private String emptyOrText(String val) {
-            return (val == null || val.isEmpty()) ? "нет" : val;
+        private int[] getFooterBounds() {
+            int padX = 12;
+            int btnH = 22;
+            int x1 = winX + padX;
+            int y1 = winY + winH - btnH - 12;
+            int x2 = winX + sideW - padX;
+            int y2 = y1 + btnH;
+            return new int[]{x1, y1, x2, y2};
         }
 
         @Override
         public void render(MatrixStack ms, int mouseX, int mouseY, float partialTicks) {
             fill(ms, 0, 0, this.width, this.height, COL_BACKDROP);
 
-            fill(ms, winX, winY, winX + winW, winY + winH, COL_PANEL_RIGHT);
+            // Главное окно: чистые панели в духе Esmire и тонкая внешняя рамка
             fill(ms, winX, winY, winX + sideW, winY + winH, COL_PANEL_LEFT);
-            drawHollowRect(ms, winX, winY, winX + winW, winY + winH, COL_BORDER_BLOOD);
-            vLine(ms, winX + sideW, winY, winY + winH, COL_BORDER_DARK);
+            fill(ms, winX + sideW, winY, winX + winW, winY + winH, COL_PANEL_RIGHT);
+            fill(ms, winX + sideW, winY, winX + sideW + 1, winY + winH, COL_DIVIDER);
+            renderOutline(ms, winX, winY, winX + winW, winY + winH, COL_BORDER_MAIN);
 
-            int titleY = winY + 18;
-            drawCenteredString(ms, this.font, "§4§lV E T E M E N T S", winX + sideW / 2, titleY, COL_BLOOD_TEXT);
-            drawCenteredString(ms, this.font, "§8BLOOD EDITION", winX + sideW / 2, titleY + 11, COL_TEXT_MUTED);
+            // Логотип слева сверху
+            drawCenteredString(ms, this.font, "§c§lVETEMENTS", winX + sideW / 2, winY + 14, COL_BLOOD_TEXT);
+            drawCenteredString(ms, this.font, "§8BLOOD", winX + sideW / 2, winY + 26, COL_TEXT_MUTED);
 
+            // Вкладки категорий слева (без лишних обводок, только чистая плашка и левый акцент)
             Category[] cats = Category.values();
             int tabStartY = winY + 48;
             int tabH = 24;
-            int tabGap = 4;
             for (int i = 0; i < cats.length; i++) {
-                Category cat = cats[i];
-                int ty = tabStartY + i * (tabH + tabGap);
+                Category c = cats[i];
+                int ty1 = tabStartY + i * (tabH + 4);
+                int ty2 = ty1 + tabH;
                 int tx1 = winX + 10;
                 int tx2 = winX + sideW - 10;
-                boolean active = (cat == selectedCategory) && (searchBox == null || searchBox.getValue().trim().isEmpty());
-                boolean hovered = mouseX >= tx1 && mouseX <= tx2 && mouseY >= ty && mouseY <= ty + tabH;
+                boolean active = (c == selectedCategory);
+                boolean hovered = mouseX >= tx1 && mouseX <= tx2 && mouseY >= ty1 && mouseY <= ty2;
 
                 if (active) {
-                    fill(ms, tx1, ty, tx2, ty + tabH, COL_TAB_ACTIVE);
-                    drawHollowRect(ms, tx1, ty, tx2, ty + tabH, COL_BORDER_BLOOD);
-                    fill(ms, tx1, ty, tx1 + 3, ty + tabH, COL_BORDER_BRIGHT);
+                    fill(ms, tx1, ty1, tx2, ty2, COL_TAB_ACTIVE);
+                    fill(ms, tx1, ty1, tx1 + 2, ty2, COL_TAB_ACCENT);
                 } else if (hovered) {
-                    fill(ms, tx1, ty, tx2, ty + tabH, COL_CARD);
-                    drawHollowRect(ms, tx1, ty, tx2, ty + tabH, COL_BORDER_DARK);
+                    fill(ms, tx1, ty1, tx2, ty2, COL_CARD_HOVER);
                 }
 
-                String labelText = (active ? "§c§l" : (hovered ? "§f" : "§7")) + cat.glyph + "  " + cat.label;
-                drawString(ms, this.font, labelText, tx1 + 10, ty + (tabH - 8) / 2, COL_TEXT_MAIN);
+                String label = (active ? "§f" : "§7") + c.glyph + "  " + c.label;
+                drawString(ms, this.font, label, tx1 + 10, ty1 + (tabH - 8) / 2, active ? COL_TEXT_MAIN : COL_TEXT_MUTED);
             }
 
-            int footerH = 22;
-            int fx1 = winX + 10;
-            int fx2 = winX + sideW - 10;
-            int fy1 = winY + winH - footerH - 10;
-            int fy2 = winY + winH - 10;
-            boolean footerHover = mouseX >= fx1 && mouseX <= fx2 && mouseY >= fy1 && mouseY <= fy2;
-            fill(ms, fx1, fy1, fx2, fy2, footerHover ? COL_TAB_ACTIVE : COL_CARD);
-            drawHollowRect(ms, fx1, fy1, fx2, fy2, footerHover ? COL_BORDER_BRIGHT : COL_BORDER_BLOOD);
-            drawCenteredString(ms, this.font, "§4§lawe", (fx1 + fx2) / 2, fy1 + (footerH - 8) / 2, COL_BLOOD_TEXT);
+            // Нижняя подпись awe
+            int[] footer = getFooterBounds();
+            fill(ms, footer[0], footer[1], footer[2], footer[3], COL_CARD);
+            fill(ms, footer[0], footer[3] - 1, footer[2], footer[3], COL_BORDER_MAIN);
+            drawCenteredString(ms, this.font, "§c§lawe", (footer[0] + footer[2]) / 2, footer[1] + 7, COL_BLOOD_TEXT);
 
-            int sbX1 = searchBox.x - 4;
-            int sbY1 = searchBox.y - 2;
-            int sbX2 = searchBox.x + searchBox.getWidth() + 4;
-            int sbY2 = searchBox.y + searchBox.getHeight() + 2;
-            fill(ms, sbX1, sbY1, sbX2, sbY2, COL_SEARCH_BG);
-            drawHollowRect(ms, sbX1, sbY1, sbX2, sbY2, searchBox.isFocused() ? COL_BORDER_BRIGHT : COL_BORDER_DARK);
+            // Строка поиска сверху справа
+            int rightX = winX + sideW + 14;
+            int searchY = winY + 12;
+            int rightW = winW - sideW - 28;
+            int searchH = 22;
 
-            if (searchBox.getValue().isEmpty() && !searchBox.isFocused()) {
-                drawString(ms, this.font, "§7⌕ Поиск модулей...", searchBox.x + 2, searchBox.y + 6, COL_TEXT_MUTED);
+            fill(ms, rightX, searchY, rightX + rightW, searchY + searchH, COL_SEARCH_BG);
+            renderOutline(ms, rightX, searchY, rightX + rightW, searchY + searchH,
+                (searchBox != null && searchBox.isFocused()) ? COL_SEARCH_FOCUS : COL_DIVIDER);
+
+            if (searchBox != null && searchBox.getValue().isEmpty() && !searchBox.isFocused()) {
+                drawString(ms, this.font, "Поиск модулей...", rightX + 8, searchY + 7, COL_TEXT_MUTED);
             }
-            searchBox.render(ms, mouseX, mouseY, partialTicks);
+            if (searchBox != null) {
+                searchBox.render(ms, mouseX, mouseY, partialTicks);
+            }
 
-            List<ModuleCard> cards = getVisibleCards();
-            int areaX = winX + sideW + 16;
-            int areaY = sbY2 + 12;
-            int areaW = winW - sideW - 32;
-            int areaH = winY + winH - areaY - 12;
+            // Карточки модулей в два столбца без рамок вокруг иконок
+            List<ModuleCard> visible = getVisibleCards();
+            int listTop = searchY + searchH + 12;
+            int listBottom = winY + winH - 12;
 
-            int cols = areaW >= 320 ? 2 : 1;
-            int gapX = 10;
-            int gapY = 10;
-            int cardW = (areaW - gapX * (cols - 1)) / cols;
-            int cardH = 44;
-
-            for (int i = 0; i < cards.size(); i++) {
-                int col = i % cols;
-                int row = i / cols;
-                int cx1 = areaX + col * (cardW + gapX);
-                int cy1 = areaY + row * (cardH + gapY);
-                int cx2 = cx1 + cardW;
-                int cy2 = cy1 + cardH;
-
-                if (cy2 > winY + winH - 8) {
-                    break;
+            for (int i = 0; i < visible.size(); i++) {
+                ModuleCard card = visible.get(i);
+                int[] b = getCardBounds(i, rightX, listTop, rightW);
+                if (b[3] < listTop || b[1] > listBottom) {
+                    continue;
                 }
 
-                ModuleCard card = cards.get(i);
-                boolean hovered = mouseX >= cx1 && mouseX <= cx2 && mouseY >= cy1 && mouseY <= cy2;
-                boolean activeState = card.isSwitch() && card.switchState();
+                boolean hovered = mouseX >= b[0] && mouseX <= b[2] && mouseY >= b[1] && mouseY <= b[3];
+                fill(ms, b[0], b[1], b[2], b[3], hovered ? COL_CARD_HOVER : COL_CARD);
+                if (card.isSwitch() && card.switchState()) {
+                    fill(ms, b[0], b[1], b[0] + 2, b[3], COL_TAB_ACCENT);
+                }
 
-                fill(ms, cx1, cy1, cx2, cy2, hovered ? COL_CARD_HOVER : COL_CARD);
-                drawHollowRect(ms, cx1, cy1, cx2, cy2,
-                    activeState ? COL_BORDER_BLOOD : (hovered ? COL_BORDER_BLOOD : COL_BORDER_DARK));
+                int textX = b[0] + 10;
+                int rightControlArea = card.isSwitch() ? 34 : 54;
+                int maxTextW = Math.max(40, (b[2] - textX) - rightControlArea);
 
-                int badgeSize = 22;
-                int bx1 = cx1 + 8;
-                int by1 = cy1 + (cardH - badgeSize) / 2;
-                fill(ms, bx1, by1, bx1 + badgeSize, by1 + badgeSize, COL_TAB_ACTIVE);
-                drawHollowRect(ms, bx1, by1, bx1 + badgeSize, by1 + badgeSize,
-                    activeState ? COL_BORDER_BRIGHT : COL_BORDER_DARK);
-                drawCenteredString(ms, this.font, activeState ? "§c" + card.category().glyph : "§7" + card.category().glyph,
-                    bx1 + badgeSize / 2, by1 + (badgeSize - 8) / 2, COL_TEXT_MAIN);
+                String titleText = trimToWidth(card.title(), maxTextW);
+                String descText = trimToWidth(card.description(), maxTextW);
 
-                int textX = bx1 + badgeSize + 8;
-                int rightReserve = card.isSwitch() ? 38 : (this.font.width(card.actionLabel()) + 18);
-                String titleStr = trimToWidth(card.title(), Math.max(40, cardW - (textX - cx1) - rightReserve));
-                String descStr = trimToWidth(card.description(), Math.max(40, cardW - (textX - cx1) - rightReserve));
-
-                drawString(ms, this.font, "§f" + titleStr, textX, cy1 + 9, COL_TEXT_MAIN);
-                drawString(ms, this.font, "§7" + descStr, textX, cy1 + 22, COL_TEXT_MUTED);
+                drawString(ms, this.font, titleText, textX, b[1] + 8, COL_TEXT_MAIN);
+                drawString(ms, this.font, descText, textX, b[1] + 22, COL_TEXT_MUTED);
 
                 if (card.isSwitch()) {
                     int swW = 24;
                     int swH = 12;
-                    int swX1 = cx2 - swW - 10;
-                    int swY1 = cy1 + (cardH - swH) / 2;
-                    int swX2 = swX1 + swW;
-                    int swY2 = swY1 + swH;
+                    int swX1 = b[2] - swW - 10;
+                    int swY1 = b[1] + (b[3] - b[1] - swH) / 2;
+                    boolean on = card.switchState();
 
-                    fill(ms, swX1, swY1, swX2, swY2, activeState ? COL_TOGGLE_ON_BG : COL_TOGGLE_OFF_BG);
-                    drawHollowRect(ms, swX1, swY1, swX2, swY2, activeState ? COL_BORDER_BRIGHT : COL_BORDER_DARK);
-
-                    int knobSize = 8;
-                    int knobX = activeState ? (swX2 - knobSize - 2) : (swX1 + 2);
-                    int knobY = swY1 + 2;
-                    fill(ms, knobX, knobY, knobX + knobSize, knobY + knobSize,
-                        activeState ? COL_TOGGLE_ON_KNOB : COL_TOGGLE_OFF_KNOB);
+                    fill(ms, swX1, swY1, swX1 + swW, swY1 + swH, on ? COL_TOGGLE_ON_BG : COL_TOGGLE_OFF_BG);
+                    int knobW = 8;
+                    int knobX = on ? (swX1 + swW - knobW - 2) : (swX1 + 2);
+                    fill(ms, knobX, swY1 + 2, knobX + knobW, swY1 + swH - 2, on ? COL_TOGGLE_ON_KNOB : COL_TOGGLE_OFF_KNOB);
                 } else {
-                    String act = card.actionLabel();
-                    int bw = this.font.width(act) + 10;
-                    int bh = 16;
-                    int bxAction1 = cx2 - bw - 8;
-                    int byAction1 = cy1 + (cardH - bh) / 2;
-                    int bxAction2 = bxAction1 + bw;
-                    int byAction2 = byAction1 + bh;
-                    boolean actHover = mouseX >= bxAction1 && mouseX <= bxAction2 && mouseY >= byAction1 && mouseY <= byAction2;
+                    int btnW = 44;
+                    int btnH = 16;
+                    int btnX1 = b[2] - btnW - 8;
+                    int btnY1 = b[1] + (b[3] - b[1] - btnH) / 2;
+                    boolean btnHover = mouseX >= btnX1 && mouseX <= btnX1 + btnW && mouseY >= btnY1 && mouseY <= btnY1 + btnH;
 
-                    fill(ms, bxAction1, byAction1, bxAction2, byAction2, actHover ? COL_TOGGLE_ON_BG : COL_TAB_ACTIVE);
-                    drawHollowRect(ms, bxAction1, byAction1, bxAction2, byAction2, actHover ? COL_BORDER_BRIGHT : COL_BORDER_BLOOD);
-                    drawCenteredString(ms, this.font, "§c" + act, (bxAction1 + bxAction2) / 2, byAction1 + (bh - 8) / 2, COL_BLOOD_TEXT);
+                    fill(ms, btnX1, btnY1, btnX1 + btnW, btnY1 + btnH, btnHover ? COL_BTN_HOVER : COL_BTN_BG);
+                    drawCenteredString(ms, this.font, card.actionLabel(), btnX1 + btnW / 2, btnY1 + 4, COL_BLOOD_TEXT);
                 }
             }
 
-            if (cards.isEmpty()) {
-                drawCenteredString(ms, this.font, "§7Модули не найдены", areaX + areaW / 2, areaY + Math.max(20, areaH / 2 - 4), COL_TEXT_MUTED);
-            }
+            super.render(ms, mouseX, mouseY, partialTicks);
         }
 
         private String trimToWidth(String text, int maxWidth) {
-            if (text == null) return "";
-            if (this.font.width(text) <= maxWidth) return text;
+            if (text == null || this.font.width(text) <= maxWidth) {
+                return text == null ? "" : text;
+            }
             String ellipsis = "...";
             int avail = Math.max(0, maxWidth - this.font.width(ellipsis));
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < text.length(); i++) {
-                char c = text.charAt(i);
-                if (this.font.width(sb.toString() + c) > avail) {
-                    break;
-                }
-                sb.append(c);
-            }
-            return sb.append(ellipsis).toString();
+            return this.font.plainSubstrByWidth(text, avail) + ellipsis;
         }
 
-        private void drawHollowRect(MatrixStack ms, int x1, int y1, int x2, int y2, int color) {
-            hLine(ms, x1, x2, y1, color);
-            hLine(ms, x1, x2, y2, color);
-            vLine(ms, x1, y1, y2, color);
-            vLine(ms, x2, y1, y2, color);
+        private void renderOutline(MatrixStack ms, int x1, int y1, int x2, int y2, int color) {
+            fill(ms, x1, y1, x2, y1 + 1, color);
+            fill(ms, x1, y2 - 1, x2, y2, color);
+            fill(ms, x1, y1, x1 + 1, y2, color);
+            fill(ms, x2 - 1, y1, x2, y2, color);
         }
 
         @Override
@@ -979,72 +963,56 @@ public class ModCore {
             int mx = (int) mouseX;
             int my = (int) mouseY;
 
-            if (searchBox != null && searchBox.mouseClicked(mouseX, mouseY, button)) {
-                this.setFocused(searchBox);
-                searchBox.setFocus(true);
+            if (searchBox != null) {
+                searchBox.mouseClicked(mouseX, mouseY, button);
+            }
+
+            int[] footer = getFooterBounds();
+            if (mx >= footer[0] && mx <= footer[2] && my >= footer[1] && my <= footer[3]) {
+                sendInfo("§4[VETEMENTS] §cawe");
                 return true;
-            } else if (searchBox != null) {
-                searchBox.setFocus(false);
             }
 
             Category[] cats = Category.values();
             int tabStartY = winY + 48;
             int tabH = 24;
-            int tabGap = 4;
             for (int i = 0; i < cats.length; i++) {
-                int ty = tabStartY + i * (tabH + tabGap);
+                int ty1 = tabStartY + i * (tabH + 4);
+                int ty2 = ty1 + tabH;
                 int tx1 = winX + 10;
                 int tx2 = winX + sideW - 10;
-                if (mx >= tx1 && mx <= tx2 && my >= ty && my <= ty + tabH) {
+                if (mx >= tx1 && mx <= tx2 && my >= ty1 && my <= ty2) {
                     selectedCategory = cats[i];
-                    if (searchBox != null) {
-                        searchBox.setValue("");
-                    }
+                    scrollOffset = 0;
                     return true;
                 }
             }
 
-            int footerH = 22;
-            int fx1 = winX + 10;
-            int fx2 = winX + sideW - 10;
-            int fy1 = winY + winH - footerH - 10;
-            int fy2 = winY + winH - 10;
-            if (mx >= fx1 && mx <= fx2 && my >= fy1 && my <= fy2) {
-                sendInfo("§4[VETEMENTS] §c§lawe");
-                return true;
-            }
+            int rightX = winX + sideW + 14;
+            int searchY = winY + 12;
+            int rightW = winW - sideW - 28;
+            int listTop = searchY + 22 + 12;
+            int listBottom = winY + winH - 12;
 
-            int sbY2 = searchBox.y + searchBox.getHeight() + 2;
-            List<ModuleCard> cards = getVisibleCards();
-            int areaX = winX + sideW + 16;
-            int areaY = sbY2 + 12;
-            int areaW = winW - sideW - 32;
-
-            int cols = areaW >= 320 ? 2 : 1;
-            int gapX = 10;
-            int gapY = 10;
-            int cardW = (areaW - gapX * (cols - 1)) / cols;
-            int cardH = 44;
-
-            for (int i = 0; i < cards.size(); i++) {
-                int col = i % cols;
-                int row = i / cols;
-                int cx1 = areaX + col * (cardW + gapX);
-                int cy1 = areaY + row * (cardH + gapY);
-                int cx2 = cx1 + cardW;
-                int cy2 = cy1 + cardH;
-
-                if (cy2 > winY + winH - 8) {
-                    break;
+            List<ModuleCard> visible = getVisibleCards();
+            for (int i = 0; i < visible.size(); i++) {
+                int[] b = getCardBounds(i, rightX, listTop, rightW);
+                if (b[3] < listTop || b[1] > listBottom) {
+                    continue;
                 }
-
-                if (mx >= cx1 && mx <= cx2 && my >= cy1 && my <= cy2) {
-                    cards.get(i).onTrigger();
+                if (mx >= b[0] && mx <= b[2] && my >= b[1] && my <= b[3]) {
+                    visible.get(i).onTrigger();
                     return true;
                 }
             }
 
             return super.mouseClicked(mouseX, mouseY, button);
+        }
+
+        @Override
+        public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+            scrollOffset = Math.max(0, scrollOffset - (int) (delta * 18));
+            return true;
         }
 
         @Override
