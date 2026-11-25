@@ -1,6 +1,7 @@
 package com.vetements.next;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.systems.RenderSystem;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -19,7 +20,11 @@ import net.minecraft.client.entity.player.ClientPlayerEntity;
 import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraftforge.client.event.ClientChatEvent;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
@@ -583,16 +588,15 @@ public class ModCore {
     }
 
     public static class VetementsBloodMenu extends Screen {
-        // Сетка в стиле Esmire: ровный тёмный графит/чёрный + аккуратные кроваво-красные акценты без лишних рамок
         private static final int COL_BACKDROP = 0xA8060304;
-        private static final int COL_PANEL_LEFT = 0xF20D080A;
-        private static final int COL_PANEL_RIGHT = 0xEC120B0E;
+        private static final int COL_PANEL_LEFT = 0xF50D080A;
+        private static final int COL_PANEL_RIGHT = 0xEE120B0E;
         private static final int COL_DIVIDER = 0xFF281217;
-        private static final int COL_BORDER_MAIN = 0xFF7A1422;
+        private static final int COL_BORDER_MAIN = 0xFF8A1626;
         private static final int COL_TAB_ACTIVE = 0xFF260B10;
         private static final int COL_TAB_ACCENT = 0xFFE0243C;
-        private static final int COL_CARD = 0xE6180F13;
-        private static final int COL_CARD_HOVER = 0xF5211319;
+        private static final int COL_CARD = 0xEA180F13;
+        private static final int COL_CARD_HOVER = 0xF822141A;
         private static final int COL_SEARCH_BG = 0xFF170C10;
         private static final int COL_SEARCH_FOCUS = 0xFFB81D32;
         private static final int COL_BTN_BG = 0xFF2B1117;
@@ -827,17 +831,18 @@ public class ModCore {
         public void render(MatrixStack ms, int mouseX, int mouseY, float partialTicks) {
             fill(ms, 0, 0, this.width, this.height, COL_BACKDROP);
 
-            // Главное окно: чистые панели в духе Esmire и тонкая внешняя рамка
-            fill(ms, winX, winY, winX + sideW, winY + winH, COL_PANEL_LEFT);
-            fill(ms, winX + sideW, winY, winX + winW, winY + winH, COL_PANEL_RIGHT);
+            // Главное окно со скруглёнными углами
+            int winR = 8;
+            fillRoundedRect(ms, winX, winY, winX + winW, winY + winH, winR, COL_PANEL_RIGHT);
+            fillRoundedLeftHalf(ms, winX, winY, winX + sideW, winY + winH, winR, COL_PANEL_LEFT);
             fill(ms, winX + sideW, winY, winX + sideW + 1, winY + winH, COL_DIVIDER);
-            renderOutline(ms, winX, winY, winX + winW, winY + winH, COL_BORDER_MAIN);
+            renderRoundedOutline(ms, winX, winY, winX + winW, winY + winH, winR, COL_BORDER_MAIN);
 
             // Логотип слева сверху
             drawCenteredString(ms, this.font, "§c§lVETEMENTS", winX + sideW / 2, winY + 14, COL_BLOOD_TEXT);
             drawCenteredString(ms, this.font, "§8BLOOD", winX + sideW / 2, winY + 26, COL_TEXT_MUTED);
 
-            // Вкладки категорий слева (без лишних обводок, только чистая плашка и левый акцент)
+            // Вкладки категорий слева
             Category[] cats = Category.values();
             int tabStartY = winY + 48;
             int tabH = 24;
@@ -851,20 +856,20 @@ public class ModCore {
                 boolean hovered = mouseX >= tx1 && mouseX <= tx2 && mouseY >= ty1 && mouseY <= ty2;
 
                 if (active) {
-                    fill(ms, tx1, ty1, tx2, ty2, COL_TAB_ACTIVE);
-                    fill(ms, tx1, ty1, tx1 + 2, ty2, COL_TAB_ACCENT);
+                    fillRoundedRect(ms, tx1, ty1, tx2, ty2, 5, COL_TAB_ACTIVE);
+                    fill(ms, tx1 + 2, ty1 + 4, tx1 + 4, ty2 - 4, COL_TAB_ACCENT);
                 } else if (hovered) {
-                    fill(ms, tx1, ty1, tx2, ty2, COL_CARD_HOVER);
+                    fillRoundedRect(ms, tx1, ty1, tx2, ty2, 5, COL_CARD_HOVER);
                 }
 
                 String label = (active ? "§f" : "§7") + c.glyph + "  " + c.label;
                 drawString(ms, this.font, label, tx1 + 10, ty1 + (tabH - 8) / 2, active ? COL_TEXT_MAIN : COL_TEXT_MUTED);
             }
 
-            // Нижняя подпись awe
+            // Нижняя плашка awe
             int[] footer = getFooterBounds();
-            fill(ms, footer[0], footer[1], footer[2], footer[3], COL_CARD);
-            fill(ms, footer[0], footer[3] - 1, footer[2], footer[3], COL_BORDER_MAIN);
+            fillRoundedRect(ms, footer[0], footer[1], footer[2], footer[3], 5, COL_CARD);
+            renderRoundedOutline(ms, footer[0], footer[1], footer[2], footer[3], 5, COL_BORDER_MAIN);
             drawCenteredString(ms, this.font, "§c§lawe", (footer[0] + footer[2]) / 2, footer[1] + 7, COL_BLOOD_TEXT);
 
             // Строка поиска сверху справа
@@ -873,8 +878,8 @@ public class ModCore {
             int rightW = winW - sideW - 28;
             int searchH = 22;
 
-            fill(ms, rightX, searchY, rightX + rightW, searchY + searchH, COL_SEARCH_BG);
-            renderOutline(ms, rightX, searchY, rightX + rightW, searchY + searchH,
+            fillRoundedRect(ms, rightX, searchY, rightX + rightW, searchY + searchH, 5, COL_SEARCH_BG);
+            renderRoundedOutline(ms, rightX, searchY, rightX + rightW, searchY + searchH, 5,
                 (searchBox != null && searchBox.isFocused()) ? COL_SEARCH_FOCUS : COL_DIVIDER);
 
             if (searchBox != null && searchBox.getValue().isEmpty() && !searchBox.isFocused()) {
@@ -884,7 +889,7 @@ public class ModCore {
                 searchBox.render(ms, mouseX, mouseY, partialTicks);
             }
 
-            // Карточки модулей в два столбца без рамок вокруг иконок
+            // Карточки модулей со скруглёнными углами
             List<ModuleCard> visible = getVisibleCards();
             int listTop = searchY + searchH + 12;
             int listBottom = winY + winH - 12;
@@ -897,9 +902,9 @@ public class ModCore {
                 }
 
                 boolean hovered = mouseX >= b[0] && mouseX <= b[2] && mouseY >= b[1] && mouseY <= b[3];
-                fill(ms, b[0], b[1], b[2], b[3], hovered ? COL_CARD_HOVER : COL_CARD);
+                fillRoundedRect(ms, b[0], b[1], b[2], b[3], 6, hovered ? COL_CARD_HOVER : COL_CARD);
                 if (card.isSwitch() && card.switchState()) {
-                    fill(ms, b[0], b[1], b[0] + 2, b[3], COL_TAB_ACCENT);
+                    fill(ms, b[0] + 2, b[1] + 8, b[0] + 4, b[3] - 8, COL_TAB_ACCENT);
                 }
 
                 int textX = b[0] + 10;
@@ -919,10 +924,11 @@ public class ModCore {
                     int swY1 = b[1] + (b[3] - b[1] - swH) / 2;
                     boolean on = card.switchState();
 
-                    fill(ms, swX1, swY1, swX1 + swW, swY1 + swH, on ? COL_TOGGLE_ON_BG : COL_TOGGLE_OFF_BG);
-                    int knobW = 8;
-                    int knobX = on ? (swX1 + swW - knobW - 2) : (swX1 + 2);
-                    fill(ms, knobX, swY1 + 2, knobX + knobW, swY1 + swH - 2, on ? COL_TOGGLE_ON_KNOB : COL_TOGGLE_OFF_KNOB);
+                    fillRoundedRect(ms, swX1, swY1, swX1 + swW, swY1 + swH, 6, on ? COL_TOGGLE_ON_BG : COL_TOGGLE_OFF_BG);
+                    int knobSize = 8;
+                    int knobX = on ? (swX1 + swW - knobSize - 2) : (swX1 + 2);
+                    fillRoundedRect(ms, knobX, swY1 + 2, knobX + knobSize, swY1 + swH - 2, 4,
+                        on ? COL_TOGGLE_ON_KNOB : COL_TOGGLE_OFF_KNOB);
                 } else {
                     int btnW = 44;
                     int btnH = 16;
@@ -930,12 +936,132 @@ public class ModCore {
                     int btnY1 = b[1] + (b[3] - b[1] - btnH) / 2;
                     boolean btnHover = mouseX >= btnX1 && mouseX <= btnX1 + btnW && mouseY >= btnY1 && mouseY <= btnY1 + btnH;
 
-                    fill(ms, btnX1, btnY1, btnX1 + btnW, btnY1 + btnH, btnHover ? COL_BTN_HOVER : COL_BTN_BG);
+                    fillRoundedRect(ms, btnX1, btnY1, btnX1 + btnW, btnY1 + btnH, 4, btnHover ? COL_BTN_HOVER : COL_BTN_BG);
                     drawCenteredString(ms, this.font, card.actionLabel(), btnX1 + btnW / 2, btnY1 + 4, COL_BLOOD_TEXT);
                 }
             }
 
             super.render(ms, mouseX, mouseY, partialTicks);
+        }
+
+        private void fillRoundedRect(MatrixStack ms, int x1, int y1, int x2, int y2, int r, int color) {
+            int w = x2 - x1;
+            int h = y2 - y1;
+            if (w <= 0 || h <= 0) {
+                return;
+            }
+            int rad = Math.min(r, Math.min(w / 2, h / 2));
+            if (rad <= 0) {
+                fill(ms, x1, y1, x2, y2, color);
+                return;
+            }
+
+            fill(ms, x1 + rad, y1, x2 - rad, y1 + rad, color);
+            fill(ms, x1 + rad, y2 - rad, x2 - rad, y2, color);
+            fill(ms, x1, y1 + rad, x2, y2 - rad, color);
+
+            fillCornerFan(ms, x1 + rad, y1 + rad, rad, 180.0F, 270.0F, color);
+            fillCornerFan(ms, x2 - rad, y1 + rad, rad, 270.0F, 360.0F, color);
+            fillCornerFan(ms, x2 - rad, y2 - rad, rad, 0.0F, 90.0F, color);
+            fillCornerFan(ms, x1 + rad, y2 - rad, rad, 90.0F, 180.0F, color);
+        }
+
+        private void fillRoundedLeftHalf(MatrixStack ms, int x1, int y1, int x2, int y2, int r, int color) {
+            int w = x2 - x1;
+            int h = y2 - y1;
+            if (w <= 0 || h <= 0) {
+                return;
+            }
+            int rad = Math.min(r, Math.min(w, h / 2));
+            if (rad <= 0) {
+                fill(ms, x1, y1, x2, y2, color);
+                return;
+            }
+
+            fill(ms, x1 + rad, y1, x2, y1 + rad, color);
+            fill(ms, x1 + rad, y2 - rad, x2, y2, color);
+            fill(ms, x1, y1 + rad, x2, y2 - rad, color);
+
+            fillCornerFan(ms, x1 + rad, y1 + rad, rad, 180.0F, 270.0F, color);
+            fillCornerFan(ms, x1 + rad, y2 - rad, rad, 90.0F, 180.0F, color);
+        }
+
+        private void renderRoundedOutline(MatrixStack ms, int x1, int y1, int x2, int y2, int r, int color) {
+            int w = x2 - x1;
+            int h = y2 - y1;
+            if (w <= 2 || h <= 2) {
+                return;
+            }
+            int rad = Math.min(r, Math.min(w / 2, h / 2));
+            if (rad <= 0) {
+                fill(ms, x1, y1, x2, y1 + 1, color);
+                fill(ms, x1, y2 - 1, x2, y2, color);
+                fill(ms, x1, y1, x1 + 1, y2, color);
+                fill(ms, x2 - 1, y1, x2, y2, color);
+                return;
+            }
+
+            fill(ms, x1 + rad, y1, x2 - rad, y1 + 1, color);
+            fill(ms, x1 + rad, y2 - 1, x2 - rad, y2, color);
+            fill(ms, x1, y1 + rad, x1 + 1, y2 - rad, color);
+            fill(ms, x2 - 1, y1 + rad, x2, y2 - rad, color);
+
+            strokeCornerArc(ms, x1 + rad, y1 + rad, rad, 180.0F, 270.0F, color);
+            strokeCornerArc(ms, x2 - rad, y1 + rad, rad, 270.0F, 360.0F, color);
+            strokeCornerArc(ms, x2 - rad, y2 - rad, rad, 0.0F, 90.0F, color);
+            strokeCornerArc(ms, x1 + rad, y2 - rad, rad, 90.0F, 180.0F, color);
+        }
+
+        private void fillCornerFan(MatrixStack ms, float cx, float cy, float radius, float startDeg, float endDeg, int color) {
+            float a = ((color >> 24) & 0xFF) / 255.0F;
+            float r = ((color >> 16) & 0xFF) / 255.0F;
+            float g = ((color >> 8) & 0xFF) / 255.0F;
+            float b = (color & 0xFF) / 255.0F;
+
+            int steps = Math.max(6, (int) (radius * 2));
+            Matrix4f mat = ms.last().pose();
+            Tessellator tess = Tessellator.getInstance();
+            BufferBuilder buf = tess.getBuilder();
+
+            RenderSystem.enableBlend();
+            RenderSystem.disableTexture();
+            RenderSystem.defaultBlendFunc();
+            buf.begin(GLFW.GL_TRIANGLE_FAN, DefaultVertexFormats.POSITION_COLOR);
+            buf.vertex(mat, cx, cy, 0.0F).color(r, g, b, a).endVertex();
+            for (int i = 0; i <= steps; i++) {
+                double ang = Math.toRadians(startDeg + (endDeg - startDeg) * (i / (double) steps));
+                float px = cx + (float) (Math.cos(ang) * radius);
+                float py = cy + (float) (Math.sin(ang) * radius);
+                buf.vertex(mat, px, py, 0.0F).color(r, g, b, a).endVertex();
+            }
+            tess.end();
+            RenderSystem.enableTexture();
+        }
+
+        private void strokeCornerArc(MatrixStack ms, float cx, float cy, float radius, float startDeg, float endDeg, int color) {
+            float a = ((color >> 24) & 0xFF) / 255.0F;
+            float r = ((color >> 16) & 0xFF) / 255.0F;
+            float g = ((color >> 8) & 0xFF) / 255.0F;
+            float b = (color & 0xFF) / 255.0F;
+
+            int steps = Math.max(8, (int) (radius * 2));
+            Matrix4f mat = ms.last().pose();
+            Tessellator tess = Tessellator.getInstance();
+            BufferBuilder buf = tess.getBuilder();
+
+            RenderSystem.enableBlend();
+            RenderSystem.disableTexture();
+            RenderSystem.defaultBlendFunc();
+            RenderSystem.lineWidth(1.0F);
+            buf.begin(GLFW.GL_LINE_STRIP, DefaultVertexFormats.POSITION_COLOR);
+            for (int i = 0; i <= steps; i++) {
+                double ang = Math.toRadians(startDeg + (endDeg - startDeg) * (i / (double) steps));
+                float px = cx + (float) (Math.cos(ang) * radius);
+                float py = cy + (float) (Math.sin(ang) * radius);
+                buf.vertex(mat, px, py, 0.0F).color(r, g, b, a).endVertex();
+            }
+            tess.end();
+            RenderSystem.enableTexture();
         }
 
         private String trimToWidth(String text, int maxWidth) {
@@ -945,13 +1071,6 @@ public class ModCore {
             String ellipsis = "...";
             int avail = Math.max(0, maxWidth - this.font.width(ellipsis));
             return this.font.plainSubstrByWidth(text, avail) + ellipsis;
-        }
-
-        private void renderOutline(MatrixStack ms, int x1, int y1, int x2, int y2, int color) {
-            fill(ms, x1, y1, x2, y1 + 1, color);
-            fill(ms, x1, y2 - 1, x2, y2, color);
-            fill(ms, x1, y1, x1 + 1, y2, color);
-            fill(ms, x2 - 1, y1, x2, y2, color);
         }
 
         @Override
