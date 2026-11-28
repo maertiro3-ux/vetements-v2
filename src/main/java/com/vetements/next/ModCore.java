@@ -1,28 +1,50 @@
-public static class VetementsBloodMenu extends Screen {
+// === ДОБАВЬ В ШАПКУ ModCore.java (если каких-то строк ещё нет) ===
+import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.renderer.BufferBuilder;
+import net.minecraft.client.renderer.Tessellator;
+import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
+import net.minecraft.client.util.InputMappings;
+import net.minecraft.util.math.vector.Matrix4f;
+import net.minecraft.util.text.StringTextComponent;
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.GL11;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+
+// === ЦЕЛЬНЫЙ КЛАСС VetementsBloodMenu ===
+    public static class VetementsBloodMenu extends Screen {
         // === УГОЛЬНО-КРОВАВАЯ ПАЛИТРА (ARGB: 0xAARRGGBB) ===
-        private static final int COL_BACKDROP        = 0x7A050406; // затемнение фона
-        private static final int COL_MAIN_BG         = 0xEB0E0D10; // глубокий угольный фон окна
-        private static final int COL_SIDEBAR_BG      = 0xF209080A; // более тёмный уголь сайдбара
-        private static final int COL_CARD_BG         = 0xCC141216; // карточка модуля / поиск
-        private static final int COL_CARD_HOVER      = 0xE61B171D; // карточка при наведении
-        private static final int COL_ICON_BG         = 0xFF0B0A0D; // квадрат под иконку
+        private static final int COL_BACKDROP        = 0x7A050406;
+        private static final int COL_MAIN_BG         = 0xEB0E0D10;
+        private static final int COL_SIDEBAR_BG      = 0xF209080A;
+        private static final int COL_CARD_BG         = 0xCC141216;
+        private static final int COL_CARD_HOVER      = 0xE61B171D;
+        private static final int COL_ICON_BG         = 0xFF0B0A0D;
 
-        private static final int COL_BORDER          = 0xFF281B20; // тёмно-бордовая тонкая рамка
-        private static final int COL_BORDER_HOVER    = 0xFF5A1D28; // рамка при наведении
-        private static final int COL_BLOOD_ACCENT    = 0xFFB81D33; // основной кровавый акцент
-        private static final int COL_BLOOD_BRIGHT    = 0xFFE02842; // яркий кровавый блик
-        private static final int COL_BLOOD_DARK      = 0xFF3A0D15; // тёмно-кровавая подложка
+        private static final int COL_BORDER          = 0xFF281B20;
+        private static final int COL_BORDER_HOVER    = 0xFF5A1D28;
+        private static final int COL_BLOOD_ACCENT    = 0xFFB81D33;
+        private static final int COL_BLOOD_BRIGHT    = 0xFFE02842;
+        private static final int COL_BLOOD_DARK      = 0xFF3A0D15;
 
-        private static final int COL_TAB_ACTIVE_TOP  = 0xFF2B1218; // градиент активной вкладки (верх)
-        private static final int COL_TAB_ACTIVE_BOT  = 0xFF170D11; // градиент активной вкладки (низ)
+        private static final int COL_TAB_ACTIVE_TOP  = 0xFF2B1218;
+        private static final int COL_TAB_ACTIVE_BOT  = 0xFF170D11;
         private static final int COL_TAB_HOVER       = 0xAA1A1418;
 
-        private static final int COL_TEXT_MAIN       = 0xFFF4EFEF; // основной текст
-        private static final int COL_TEXT_SUB        = 0xFF9A8E92; // описание модулей
-        private static final int COL_TEXT_DIM        = 0xFF685D61; // плейсхолдер поиска
+        private static final int COL_TEXT_MAIN       = 0xFFF4EFEF;
+        private static final int COL_TEXT_SUB        = 0xFF9A8E92;
+        private static final int COL_TEXT_DIM        = 0xFF685D61;
 
-        private static final int COL_TOGGLE_OFF      = 0xFF221D21; // выключенный тумблер
-        private static final int COL_KNOB            = 0xFFF7F2F3; // бегунок тумблера
+        private static final int COL_TOGGLE_OFF      = 0xFF221D21;
+        private static final int COL_KNOB            = 0xFFF7F2F3;
 
         private final Screen parent;
         private final List<String> categories = Arrays.asList("Чат", "Визуал", "Доп.", "Читы", "Прочее");
@@ -82,7 +104,6 @@ public static class VetementsBloodMenu extends Screen {
 
         @Override
         public void render(MatrixStack ms, int mouseX, int mouseY, float partialTicks) {
-            // Затемнение мира с лёгким кровавым отливом
             fill(ms, 0, 0, this.width, this.height, COL_BACKDROP);
 
             float winW = Math.min(this.width - 28.0F, 700.0F);
@@ -94,19 +115,11 @@ public static class VetementsBloodMenu extends Screen {
             float sidebarW = 152.0F;
             float mainRadius = 14.0F;
 
-            // 1. Основное скруглённое окно (правая и общая подложка)
             drawRoundedRect(ms, winX, winY, winW, winH, mainRadius, COL_MAIN_BG);
-
-            // 2. Левый сайдбар со скруглением только слева
             drawRoundedRectLeft(ms, winX, winY, sidebarW, winH, mainRadius, COL_SIDEBAR_BG);
-
-            // Вертикальный разделитель сайдбара
             drawLineVertical(ms, winX + sidebarW, winY + 1.0F, winY + winH - 1.0F, COL_BORDER);
-
-            // Внешняя тонкая обводка всего окна
             drawRoundedOutline(ms, winX, winY, winW, winH, mainRadius, COL_BORDER);
 
-            // 3. Логотип VETEMENTS сверху сайдбара (чуть крупнее)
             ms.pushPose();
             float titleScale = 1.15F;
             ms.scale(titleScale, titleScale, 1.0F);
@@ -116,7 +129,6 @@ public static class VetementsBloodMenu extends Screen {
             drawCenteredString(ms, this.font, brand, (int) brandX, (int) brandY, COL_TEXT_MAIN);
             ms.popPose();
 
-            // 4. Вкладки категорий слева
             categoryRects.clear();
             float tabX = winX + 11.0F;
             float tabW = sidebarW - 22.0F;
@@ -141,7 +153,6 @@ public static class VetementsBloodMenu extends Screen {
                     drawRoundedOutline(ms, r.x, r.y, r.w, r.h, 8.0F, COL_BORDER);
                 }
 
-                // Небольшой кровавый индикатор слева от текста
                 int dotColor = active ? COL_BLOOD_BRIGHT : (hovered ? COL_TEXT_SUB : COL_TEXT_DIM);
                 drawRoundedRect(ms, r.x + 9.0F, r.y + (r.h - 6.0F) * 0.5F, 6.0F, 6.0F, 3.0F, dotColor);
 
@@ -149,7 +160,6 @@ public static class VetementsBloodMenu extends Screen {
                 drawString(ms, this.font, cat, (int) (r.x + 21.0F), (int) (r.y + (r.h - 8.0F) * 0.5F), textColor);
             }
 
-            // 5. Нижняя плашка "awe" в сайдбаре
             float footH = 26.0F;
             float footY = winY + winH - footH - 11.0F;
             footerRect = new RectF(winX + 11.0F, footY, sidebarW - 22.0F, footH);
@@ -157,18 +167,15 @@ public static class VetementsBloodMenu extends Screen {
             drawRoundedOutline(ms, footerRect.x, footerRect.y, footerRect.w, footerRect.h, 9.0F, COL_BORDER);
             drawCenteredString(ms, this.font, "awe", (int) (footerRect.x + footerRect.w * 0.5F), (int) (footerRect.y + 9.0F), COL_TEXT_SUB);
 
-            // 6. Правая область контента
             float contentX = winX + sidebarW;
             float contentW = winW - sidebarW;
             float pad = 16.0F;
 
-            // Поле поиска сверху
             float searchH = 26.0F;
             searchRect = new RectF(contentX + pad, winY + 14.0F, contentW - pad * 2.0F, searchH);
             drawRoundedRect(ms, searchRect.x, searchRect.y, searchRect.w, searchRect.h, 9.0F, COL_CARD_BG);
             drawRoundedOutline(ms, searchRect.x, searchRect.y, searchRect.w, searchRect.h, 9.0F, searchFocused ? COL_BLOOD_ACCENT : COL_BORDER);
 
-            // Иконка лупы (круг + ручка)
             float glassCx = searchRect.x + 13.0F;
             float glassCy = searchRect.y + searchRect.h * 0.5F - 1.0F;
             strokeCircle(ms, glassCx, glassCy, 3.5F, searchFocused ? COL_BLOOD_BRIGHT : COL_TEXT_DIM);
@@ -186,7 +193,6 @@ public static class VetementsBloodMenu extends Screen {
             }
             drawString(ms, this.font, searchText, (int) (searchRect.x + 24.0F), (int) (searchRect.y + 9.0F), searchTextCol);
 
-            // 7. Сетка карточек модулей (2 колонки, как на референсе)
             moduleRects.clear();
             List<ModuleItem> list = getFilteredModules();
             float gridTop = searchRect.y + searchRect.h + 13.0F;
@@ -216,7 +222,6 @@ public static class VetementsBloodMenu extends Screen {
                 drawRoundedRect(ms, cx, cy, cardW, cardH, 11.0F, hovered ? COL_CARD_HOVER : COL_CARD_BG);
                 drawRoundedOutline(ms, cx, cy, cardW, cardH, 11.0F, hovered ? COL_BORDER_HOVER : COL_BORDER);
 
-                // Левый скруглённый бокс под иконку
                 float iconBoxSize = 26.0F;
                 float ix = cx + 10.0F;
                 float iy = cy + (cardH - iconBoxSize) * 0.5F;
@@ -227,7 +232,6 @@ public static class VetementsBloodMenu extends Screen {
                 drawCenteredString(ms, this.font, iconLabel, (int) (ix + iconBoxSize * 0.5F), (int) (iy + 9.0F),
                         item.enabled ? COL_BLOOD_BRIGHT : COL_TEXT_SUB);
 
-                // Текст названия и описания
                 float textX = ix + iconBoxSize + 9.0F;
                 float rightControlW = item.badgeOnly ? 54.0F : 32.0F;
                 int maxTextW = Math.max(24, (int) ((cx + cardW - 10.0F - rightControlW) - textX));
@@ -237,7 +241,6 @@ public static class VetementsBloodMenu extends Screen {
                 drawString(ms, this.font, title, (int) textX, (int) (cy + 11.0F), COL_TEXT_MAIN);
                 drawString(ms, this.font, desc, (int) textX, (int) (cy + 25.0F), COL_TEXT_SUB);
 
-                // Правый контрол: капсульный тумблер или скруглённый бейдж "Не задан"
                 if (item.badgeOnly) {
                     float bw = 50.0F;
                     float bh = 18.0F;
@@ -293,8 +296,6 @@ public static class VetementsBloodMenu extends Screen {
             int avail = Math.max(0, maxW - this.font.width(ellipsis));
             return this.font.plainSubstrByWidth(text, avail) + ellipsis;
         }
-
-        // === ВЕКТОРНАЯ ОТРИСОВКА СКРУГЛЕНИЙ И ГРАДИЕНТОВ ===
 
         private void drawRoundedRect(MatrixStack ms, float x, float y, float w, float h, float r, int color) {
             r = Math.min(r, Math.min(w, h) * 0.5F);
@@ -478,8 +479,6 @@ public static class VetementsBloodMenu extends Screen {
             RenderSystem.enableTexture();
         }
 
-        // === УПРАВЛЕНИЕ МЫШЬЮ И КЛАВИАТУРОЙ ===
-
         @Override
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
             if (button != 0) {
@@ -516,60 +515,4 @@ public static class VetementsBloodMenu extends Screen {
         }
 
         @Override
-        public boolean charTyped(char codePoint, int modifiers) {
-            if (searchFocused && codePoint >= 32 && codePoint != 127) {
-                searchQuery += codePoint;
-                return true;
-            }
-            return super.charTyped(codePoint, modifiers);
-        }
-
-        @Override
-        public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-            if (searchFocused) {
-                if (keyCode == GLFW.GLFW_KEY_BACKSPACE && !searchQuery.isEmpty()) {
-                    searchQuery = searchQuery.substring(0, searchQuery.length() - 1);
-                    return true;
-                }
-                if (keyCode == GLFW.GLFW_KEY_ESCAPE || keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
-                    searchFocused = false;
-                    return true;
-                }
-            }
-            return super.keyPressed(keyCode, scanCode, modifiers);
-        }
-
-        private static class ModuleItem {
-            final String icon;
-            final String title;
-            final String description;
-            final boolean badgeOnly;
-            boolean enabled;
-
-            ModuleItem(String icon, String title, String description, boolean enabled, boolean badgeOnly) {
-                this.icon = icon;
-                this.title = title;
-                this.description = description;
-                this.enabled = enabled;
-                this.badgeOnly = badgeOnly;
-            }
-        }
-
-        private static class RectF {
-            final float x;
-            final float y;
-            final float w;
-            final float h;
-
-            RectF(float x, float y, float w, float h) {
-                this.x = x;
-                this.y = y;
-                this.w = w;
-                this.h = h;
-            }
-
-            boolean contains(float px, float py) {
-                return px >= x && px <= x + w && py >= y && py <= y + h;
-            }
-        }
-    }
+        public boolean charTyped(char codePoint,
