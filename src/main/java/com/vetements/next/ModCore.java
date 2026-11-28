@@ -1,11 +1,11 @@
-// === ДОБАВЬ В ШАПКУ ModCore.java (если каких-то строк ещё нет) ===
+package com.vetements.next;
+
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
-import net.minecraft.client.util.InputMappings;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.text.StringTextComponent;
 import org.lwjgl.glfw.GLFW;
@@ -19,9 +19,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
-// === ЦЕЛЬНЫЙ КЛАСС VetementsBloodMenu ===
+public class ModCore {
+
+    public static void init() {
+    }
+
     public static class VetementsBloodMenu extends Screen {
-        // === УГОЛЬНО-КРОВАВАЯ ПАЛИТРА (ARGB: 0xAARRGGBB) ===
         private static final int COL_BACKDROP        = 0x7A050406;
         private static final int COL_MAIN_BG         = 0xEB0E0D10;
         private static final int COL_SIDEBAR_BG      = 0xF209080A;
@@ -514,7 +517,7 @@ import java.util.Map;
             return super.mouseClicked(mouseX, mouseY, button);
         }
 
-       @Override
+        @Override
         public boolean charTyped(char codePoint, int modifiers) {
             if (searchFocused && codePoint >= 32 && codePoint != 127) {
                 searchQuery += codePoint;
@@ -572,3 +575,4 @@ import java.util.Map;
             }
         }
     }
+}
