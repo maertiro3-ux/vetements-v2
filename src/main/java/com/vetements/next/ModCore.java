@@ -39,6 +39,7 @@ public class ModCore {
     public static boolean gameConsoleEnabled = true;
 
     private static final List<String> CONSOLE_LOGS = new LinkedList<>();
+    private static final List<String> RECENT_CHAT_LINES = new LinkedList<>();
     private static final Pattern MATH_PATTERN = Pattern.compile("(-?\\d+(?:\\.\\d+)?)\\s*([+\\-*/xX×])\\s*(-?\\d+(?:\\.\\d+)?)");
 
     private static String pendingMathAnswer = null;
@@ -106,6 +107,11 @@ public class ModCore {
         String clean = stripFormatting(raw);
         String lower = clean.toLowerCase(Locale.ROOT);
 
+        if (RECENT_CHAT_LINES.size() >= 100) {
+            RECENT_CHAT_LINES.remove(0);
+        }
+        RECENT_CHAT_LINES.add(clean);
+
         if (gameConsoleEnabled && isConsoleMessage(lower)) {
             if (CONSOLE_LOGS.size() >= 100) {
                 CONSOLE_LOGS.remove(0);
@@ -146,11 +152,11 @@ public class ModCore {
         }
 
         Minecraft mc = Minecraft.getInstance();
-        if (mc.player == null || mc.gui == null) {
+        if (mc.player == null) {
             return;
         }
 
-        String lastLine = getLastChatLine(mc);
+        String lastLine = getLastChatLine();
         if (lastLine != null && !lastLine.isEmpty()) {
             mc.keyboardHandler.setClipboard(lastLine);
             mc.player.displayClientMessage(
@@ -161,24 +167,9 @@ public class ModCore {
         }
     }
 
-    private static String getLastChatLine(Minecraft mc) {
-        try {
-            List<?> messages = mc.gui.getChat().getMessages();
-            if (messages != null && !messages.isEmpty()) {
-                Object last = messages.get(0);
-                if (last != null) {
-                    String text = last.toString();
-                    int idx = text.indexOf("text='");
-                    if (idx != -1) {
-                        int end = text.indexOf('\'', idx + 6);
-                        if (end != -1) {
-                            return stripFormatting(text.substring(idx + 6, end));
-                        }
-                    }
-                    return stripFormatting(text);
-                }
-            }
-        } catch (Throwable ignored) {
+    private static String getLastChatLine() {
+        if (!RECENT_CHAT_LINES.isEmpty()) {
+            return RECENT_CHAT_LINES.get(RECENT_CHAT_LINES.size() - 1);
         }
         return CONSOLE_LOGS.isEmpty() ? null : CONSOLE_LOGS.get(CONSOLE_LOGS.size() - 1);
     }
