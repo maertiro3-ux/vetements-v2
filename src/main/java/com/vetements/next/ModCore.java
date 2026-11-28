@@ -2,12 +2,21 @@ package com.vetements.next;
 
 import com.mojang.blaze3d.matrix.MatrixStack;
 import com.mojang.blaze3d.systems.RenderSystem;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screen.ChatScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.renderer.BufferBuilder;
 import net.minecraft.client.renderer.Tessellator;
 import net.minecraft.client.renderer.vertex.DefaultVertexFormats;
 import net.minecraft.util.math.vector.Matrix4f;
 import net.minecraft.util.text.StringTextComponent;
+import net.minecraft.util.text.TextFormatting;
+import net.minecraftforge.client.event.ClientChatReceivedEvent;
+import net.minecraftforge.client.event.GuiScreenEvent;
+import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL11;
 
@@ -15,13 +24,213 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class ModCore {
 
+    public static boolean chatFormatEnabled = true;
+    public static boolean autoMathEnabled = true;
+    public static boolean copyChatEnabled = true;
+    public static boolean gameConsoleEnabled = true;
+
+    private static final List<String> CONSOLE_LOGS = new LinkedList<>();
+    private static final Pattern MATH_PATTERN = Pattern.compile("(-?\\d+(?:\\.\\d+)?)\\s*([+\\-*/xX×])\\s*(-?\\d+(?:\\.\\d+)?)");
+
+    private static String pendingMathAnswer = null;
+    private static int mathDelayTicks = 0;
+    private static int mathCooldownTicks = 0;
+
     public static void init() {
+        MinecraftForge.EVENT_BUS.register(new ModCore());
+    }
+
+    public static List<String> getConsoleLogs() {
+        return Collections.unmodifiableList(CONSOLE_LOGS);
+    }
+
+    @SubscribeEvent
+    public void onKeyInput(InputEvent.KeyInputEvent event) {
+        if (event.getAction() != GLFW.GLFW_PRESS) {
+            return;
+        }
+        if (event.getKey() != GLFW.GLFW_KEY_RIGHT_SHIFT) {
+            return;
+        }
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.level == null) {
+            return;
+        }
+        if (mc.screen instanceof VetementsBloodMenu) {
+            mc.setScreen(null);
+            return;
+        }
+        if (mc.screen == null) {
+            mc.setScreen(new VetementsBloodMenu(null));
+        }
+    }
+
+    @SubscribeEvent
+    public void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase != TickEvent.Phase.END) {
+            return;
+        }
+        if (mathCooldownTicks > 0) {
+            mathCooldownTicks--;
+        }
+        if (pendingMathAnswer != null) {
+            if (mathDelayTicks > 0) {
+                mathDelayTicks--;
+            } else {
+                Minecraft mc = Minecraft.getInstance();
+                if (mc.player != null && autoMathEnabled) {
+                    mc.player.chat(pendingMathAnswer);
+                    mathCooldownTicks = 60;
+                }
+                pendingMathAnswer = null;
+            }
+        }
+    }
+
+    @SubscribeEvent
+    public void onChatReceived(ClientChatReceivedEvent event) {
+        String raw = event.getMessage().getString();
+        if (raw == null || raw.isEmpty()) {
+            return;
+        }
+        String clean = stripFormatting(raw);
+        String lower = clean.toLowerCase(Locale.ROOT);
+
+        if (gameConsoleEnabled && isConsoleMessage(lower)) {
+            if (CONSOLE_LOGS.size() >= 100) {
+                CONSOLE_LOGS.remove(0);
+            }
+            CONSOLE_LOGS.add(clean);
+        }
+
+        if (autoMathEnabled && pendingMathAnswer == null && mathCooldownTicks <= 0) {
+            String solved = trySolveMath(clean);
+            if (solved != null) {
+                pendingMathAnswer = solved;
+                mathDelayTicks = 12;
+            }
+        }
+
+        if (chatFormatEnabled) {
+            Minecraft mc = Minecraft.getInstance();
+            String playerName = (mc.player != null) ? mc.player.getName().getString() : "";
+            String formatted = TextFormatting.DARK_RED + "» " + TextFormatting.GRAY + clean;
+            if (!playerName.isEmpty() && clean.contains(playerName)) {
+                formatted = formatted.replace(playerName,
+                        TextFormatting.RED + "" + TextFormatting.BOLD + playerName + TextFormatting.RESET + TextFormatting.GRAY);
+            }
+            event.setMessage(new StringTextComponent(formatted));
+        }
+    }
+
+    @SubscribeEvent
+    public void onChatMouseClick(GuiScreenEvent.MouseClickedEvent.Pre event) {
+        if (!copyChatEnabled) {
+            return;
+        }
+        if (!(event.getGui() instanceof ChatScreen)) {
+            return;
+        }
+        if (event.getButton() != 1) {
+            return;
+        }
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player == null || mc.gui == null) {
+            return;
+        }
+
+        String lastLine = getLastChatLine(mc);
+        if (lastLine != null && !lastLine.isEmpty()) {
+            mc.keyboardHandler.setClipboard(lastLine);
+            mc.player.displayClientMessage(
+                    new StringTextComponent(TextFormatting.DARK_RED + "[VETEMENTS] " + TextFormatting.GRAY + "Скопировано: " + TextFormatting.WHITE + lastLine),
+                    true
+            );
+            event.setCanceled(true);
+        }
+    }
+
+    private static String getLastChatLine(Minecraft mc) {
+        try {
+            List<?> messages = mc.gui.getChat().getMessages();
+            if (messages != null && !messages.isEmpty()) {
+                Object last = messages.get(0);
+                if (last != null) {
+                    String text = last.toString();
+                    int idx = text.indexOf("text='");
+                    if (idx != -1) {
+                        int end = text.indexOf('\'', idx + 6);
+                        if (end != -1) {
+                            return stripFormatting(text.substring(idx + 6, end));
+                        }
+                    }
+                    return stripFormatting(text);
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return CONSOLE_LOGS.isEmpty() ? null : CONSOLE_LOGS.get(CONSOLE_LOGS.size() - 1);
+    }
+
+    private static boolean isConsoleMessage(String lower) {
+        return lower.contains("[gameconsole]") || lower.contains("gameconsole") || lower.contains("[console]");
+    }
+
+    private static String trySolveMath(String text) {
+        if (text.startsWith("»") || text.startsWith("[VETEMENTS]")) {
+            return null;
+        }
+        Matcher m = MATH_PATTERN.matcher(text);
+        if (!m.find()) {
+            return null;
+        }
+        try {
+            double a = Double.parseDouble(m.group(1));
+            String op = m.group(2);
+            double b = Double.parseDouble(m.group(3));
+            double res;
+            switch (op) {
+                case "+":
+                    res = a + b;
+                    break;
+                case "-":
+                    res = a - b;
+                    break;
+                case "*":
+                case "x":
+                case "X":
+                case "×":
+                    res = a * b;
+                    break;
+                case "/":
+                    if (b == 0.0) return null;
+                    res = a / b;
+                    break;
+                default:
+                    return null;
+            }
+            if (Math.abs(res - Math.rint(res)) < 1e-9) {
+                return Long.toString(Math.round(res));
+            }
+            return String.format(Locale.ROOT, "%.2f", res);
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private static String stripFormatting(String s) {
+        return s.replaceAll("§.", "");
     }
 
     public static class VetementsBloodMenu extends Screen {
@@ -72,25 +281,24 @@ public class ModCore {
 
         private void initModules() {
             modulesByCategory.put("Чат", Arrays.asList(
-                    new ModuleItem("=", "Формат чата", "Префиксы, суффиксы, шрифт и радуга", true, false),
-                    new ModuleItem("+", "Примеры", "Авто-решает примеры из чат-игры", true, false),
-                    new ModuleItem("o", "Копирование", "ПКМ по строке чата копирует текст", true, false),
-                    new ModuleItem("Console", "Console", "Выносит [GameConsole] в боковую па...", true, false),
-                    new ModuleItem("-", "Фильтр слов", "Слова, действие и цвет подс...", false, true)
+                    new ModuleItem("=", "Формат чата", "Префиксы, суффиксы, шрифт и радуга", chatFormatEnabled, false, v -> chatFormatEnabled = v),
+                    new ModuleItem("+", "Примеры", "Авто-решает примеры из чат-игры", autoMathEnabled, false, v -> autoMathEnabled = v),
+                    new ModuleItem("o", "Копирование", "ПКМ по чату копирует текст", copyChatEnabled, false, v -> copyChatEnabled = v),
+                    new ModuleItem("Console", "Console", "Ловит [GameConsole] в отдельный буфер", gameConsoleEnabled, false, v -> gameConsoleEnabled = v)
             ));
             modulesByCategory.put("Визуал", Arrays.asList(
-                    new ModuleItem("Eye", "Fullbright", "Максимальная яркость без теней", true, false),
-                    new ModuleItem("HUD", "WaterMark", "Кровавая плашка в углу экрана", true, false)
+                    new ModuleItem("Eye", "Fullbright", "Максимальная яркость без теней", true, false, null),
+                    new ModuleItem("HUD", "WaterMark", "Кровавая плашка в углу экрана", true, false, null)
             ));
             modulesByCategory.put("Доп.", Arrays.asList(
-                    new ModuleItem("Cfg", "Конфиги", "Сохранение и загрузка профилей", false, true)
+                    new ModuleItem("Cfg", "Конфиги", "Сохранение и загрузка профилей", false, true, null)
             ));
             modulesByCategory.put("Читы", Arrays.asList(
-                    new ModuleItem("!", "AutoSprint", "Автоматический бег при движении", false, false),
-                    new ModuleItem("+", "NoFall", "Блокировка урона от падения", false, false)
+                    new ModuleItem("!", "AutoSprint", "Автоматический бег при движении", false, false, null),
+                    new ModuleItem("+", "NoFall", "Блокировка урона от падения", false, false, null)
             ));
             modulesByCategory.put("Прочее", Arrays.asList(
-                    new ModuleItem("i", "Информация", "Версия клиента и бинды", false, true)
+                    new ModuleItem("i", "Информация", "Версия клиента и бинды", false, true, null)
             ));
         }
 
@@ -510,6 +718,9 @@ public class ModCore {
                 if (moduleRects.get(i).contains(mx, my)) {
                     ModuleItem item = filtered.get(i);
                     item.enabled = !item.enabled;
+                    if (item.onToggle != null) {
+                        item.onToggle.accept(item.enabled);
+                    }
                     return true;
                 }
             }
@@ -541,19 +752,26 @@ public class ModCore {
             return super.keyPressed(keyCode, scanCode, modifiers);
         }
 
+        @FunctionalInterface
+        private interface BoolConsumer {
+            void accept(boolean value);
+        }
+
         private static class ModuleItem {
             final String icon;
             final String title;
             final String description;
             final boolean badgeOnly;
+            final BoolConsumer onToggle;
             boolean enabled;
 
-            ModuleItem(String icon, String title, String description, boolean enabled, boolean badgeOnly) {
+            ModuleItem(String icon, String title, String description, boolean enabled, boolean badgeOnly, BoolConsumer onToggle) {
                 this.icon = icon;
                 this.title = title;
                 this.description = description;
                 this.enabled = enabled;
                 this.badgeOnly = badgeOnly;
+                this.onToggle = onToggle;
             }
         }
 
