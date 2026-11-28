@@ -514,5 +514,62 @@ import java.util.Map;
             return super.mouseClicked(mouseX, mouseY, button);
         }
 
+       @Override
+        public boolean charTyped(char codePoint, int modifiers) {
+            if (searchFocused && codePoint >= 32 && codePoint != 127) {
+                searchQuery += codePoint;
+                return true;
+            }
+            return super.charTyped(codePoint, modifiers);
+        }
+
         @Override
-        public boolean charTyped(char codePoint,
+        public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+            if (searchFocused) {
+                if (keyCode == GLFW.GLFW_KEY_BACKSPACE && !searchQuery.isEmpty()) {
+                    searchQuery = searchQuery.substring(0, searchQuery.length() - 1);
+                    return true;
+                }
+                if (keyCode == GLFW.GLFW_KEY_ESCAPE || keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+                    searchFocused = false;
+                    return true;
+                }
+            }
+            return super.keyPressed(keyCode, scanCode, modifiers);
+        }
+
+        private static class ModuleItem {
+            final String icon;
+            final String title;
+            final String description;
+            final boolean badgeOnly;
+            boolean enabled;
+
+            ModuleItem(String icon, String title, String description, boolean enabled, boolean badgeOnly) {
+                this.icon = icon;
+                this.title = title;
+                this.description = description;
+                this.enabled = enabled;
+                this.badgeOnly = badgeOnly;
+            }
+        }
+
+        private static class RectF {
+            final float x;
+            final float y;
+            final float w;
+            final float h;
+
+            RectF(float x, float y, float w, float h) {
+                this.x = x;
+                this.y = y;
+                this.w = w;
+                this.h = h;
+            }
+
+            boolean contains(float px, float py) {
+                return px >= x && px <= x + w && py >= y && py <= y + h;
+            }
+        }
+    }
+}
